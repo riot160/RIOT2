@@ -5,7 +5,7 @@ FROM node:20-alpine AS base
 
 # Install system dependencies
 RUN apk add --no-cache \
-    python3 py3-pip ffmpeg curl \
+    python3 py3-pip ffmpeg curl git \
     && pip3 install yt-dlp --break-system-packages \
     && apk del py3-pip
 
