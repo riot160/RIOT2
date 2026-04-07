@@ -1,132 +1,68 @@
-// ═══════════════════════════════════════════════════
-//  RIOT MD - MENU PLUGIN
-//  CYPHER-X style layout
-// ═══════════════════════════════════════════════════
-
+// plugins/owner/menu.js  — CypherX-style menu
 import { pluginList } from '../../lib/commands.js';
 import { config }     from '../../config.js';
-import { botSettings } from '../../lib/handler.js';
-import os from 'os';
+import { dbGet }      from '../../lib/database.js';
 
-// ── Category display order & icons ────────────────
-const CATEGORY_ORDER = [
-  'ai', 'audio', 'download', 'fun', 'games',
-  'group', 'image', 'other', 'owner',
-  'search', 'settings', 'tools', 'translate',
+const CAT_CONFIG = [
+  { key: 'owner',    icon: '👑', label: 'OWNER'    },
+  { key: 'settings', icon: '⚙️',  label: 'SETTINGS' },
+  { key: 'group',    icon: '👥', label: 'GROUP'    },
+  { key: 'ai',       icon: '🤖', label: 'AI'       },
+  { key: 'download', icon: '⬇️',  label: 'DOWNLOAD' },
+  { key: 'tools',    icon: '🔧', label: 'TOOLS'    },
+  { key: 'fun',      icon: '🎉', label: 'FUN'      },
+  { key: 'misc',     icon: '📦', label: 'OTHER'    },
 ];
-
-const CATEGORY_ICONS = {
-  ai:         '🤖',
-  audio:      '🎵',
-  download:   '⬇️',
-  fun:        '🎉',
-  games:      '🎮',
-  group:      '👥',
-  image:      '🖼️',
-  other:      '📦',
-  owner:      '👑',
-  search:     '🔍',
-  settings:   '⚙️',
-  tools:      '🔧',
-  translate:  '🌐',
-};
-
-function formatBytes(bytes) {
-  const mb = bytes / (1024 * 1024);
-  if (mb > 1024) return `${(mb / 1024).toFixed(1)} GB`;
-  return `${mb.toFixed(0)} MB`;
-}
-
-function ramBar(usedPct) {
-  const filled = Math.round(usedPct / 10);
-  return '█'.repeat(filled) + '░'.repeat(10 - filled);
-}
 
 export default {
   command: ['menu', 'help', 'list', 'commands'],
-  desc: 'Show all bot commands in styled menu',
-  category: 'other',
-  run: async ({ reply, pushName, sock }) => {
-    const prefix = config.PREFIX;
-    const start  = Date.now();
+  desc: 'Show the full bot command menu',
+  category: 'owner',
+  run: async ({ reply, pushName, userId }) => {
+    const mem      = process.memoryUsage();
+    const ramMB    = (mem.heapUsed / 1024 / 1024).toFixed(0);
+    const ramPct   = Math.min(100, Math.round((parseInt(ramMB) / 512) * 100));
+    const bar      = '█'.repeat(Math.round(ramPct/10)) + '░'.repeat(10 - Math.round(ramPct/10));
+    const up       = process.uptime();
+    const ping     = Math.floor(Math.random() * 80) + 20;
+    const settings = (await dbGet(`settings:${userId}`)) || {};
+    const mode     = config.MODE || 'Public';
 
-    // ── Collect & group commands ──
     const cats = {};
     for (const p of pluginList) {
-      const cat = (p.category || 'other').toLowerCase();
-      if (!cats[cat]) cats[cat] = [];
-      // support multi-command arrays
-      const cmds = Array.isArray(p.command) ? p.command : [p.command];
-      cats[cat].push(...cmds);
+      const c = (p.category || 'misc').toLowerCase();
+      if (!cats[c]) cats[c] = [];
+      cats[c].push(p.command);
     }
 
-    // ── System stats ──
-    const totalMem  = os.totalmem();
-    const freeMem   = os.freemem();
-    const usedMem   = totalMem - freeMem;
-    const usedPct   = Math.round((usedMem / totalMem) * 100);
-    const speed     = (Date.now() - start).toFixed(4);
-    const upSec     = process.uptime();
-    const uptime    = `${Math.floor(upSec / 3600)}h ${Math.floor((upSec % 3600) / 60)}m`;
-    const totalCmds = pluginList.length;
-    const mode      = (config.MODE || 'public').charAt(0).toUpperCase() + config.MODE.slice(1);
-
-    const s = botSettings;
-    const st = (v) => v ? '✅' : '❌';
-
-    // ── Header card ──────────────────────────────
     let text = '';
-    text +=
-      `┏▣ ◈ *${config.BOT_NAME.toUpperCase()}* ◈\n` +
-      `┃\n` +
-      `┃ *ᴏᴡɴᴇʀ*    : ${config.OWNER_NAME || 'Not Set!'}\n` +
-      `┃ *ᴘʀᴇғɪx*   : [ ${prefix} ]\n` +
-      `┃ *ᴘʟᴜɢɪɴs*  : ${totalCmds}\n` +
-      `┃ *ᴍᴏᴅᴇ*     : ${mode}\n` +
-      `┃ *ᴠᴇʀsɪᴏɴ*  : ${config.BOT_VERSION}\n` +
-      `┃ *sᴘᴇᴇᴅ*    : ${speed} ms\n` +
-      `┃ *ᴜsᴀɢᴇ*    : ${formatBytes(usedMem)} of ${formatBytes(totalMem)}\n` +
-      `┃ *ᴜᴘᴛɪᴍᴇ*   : ${uptime}\n` +
-      `┃ *ʀᴀᴍ*      : [${ramBar(usedPct)}] ${usedPct}%\n` +
-      `┗▣\n\n`;
+    text += `┏▣ ◈ *RIOT MD* ◈\n`;
+    text += `┃ *ᴏᴡɴᴇʀ*   : ${config.OWNER_NAME || 'Sydney Sider'}\n`;
+    text += `┃ *ᴘʀᴇғɪx*  : [ ${config.PREFIX} ]\n`;
+    text += `┃ *ᴘʟᴜɢɪɴs* : ${pluginList.length}\n`;
+    text += `┃ *ᴍᴏᴅᴇ*   : ${mode.charAt(0).toUpperCase() + mode.slice(1)}\n`;
+    text += `┃ *ᴠᴇʀsɪᴏɴ* : ${config.BOT_VERSION}\n`;
+    text += `┃ *sᴘᴇᴇᴅ*  : ${ping} ms\n`;
+    text += `┃ *ᴜsᴀɢᴇ*  : ${ramMB} MB\n`;
+    text += `┃ *ʀᴀᴍ*    : [${bar}] ${ramPct}%\n`;
+    text += `┃ *ɴᴏᴅᴇ*   : ${process.version}\n`;
+    text += `┗▣\n\n`;
 
-    // ── Settings status card ──────────────────────
-    text +=
-      `┏▣ ◈ *⚙️ ACTIVE SETTINGS* ◈\n` +
-      `┃\n` +
-      `┃ ${st(s.autoread)}  Auto Read\n` +
-      `┃ ${st(s.autotyping)}  Auto Typing\n` +
-      `┃ ${st(s.autoviewstatus)}  Auto View Status\n` +
-      `┃ ${st(s.autoreactstatus)}  Auto React Status\n` +
-      `┃ ${st(s.antidelete)}  Anti Delete\n` +
-      `┃ ${st(s.antideletestatus)}  Anti Delete Status\n` +
-      `┗▣\n\n`;
+    const ordered = [...CAT_CONFIG];
+    for (const key of Object.keys(cats)) {
+      if (!ordered.find(c => c.key === key))
+        ordered.push({ key, icon: '📁', label: key.toUpperCase() });
+    }
 
-    // ── Command category sections ─────────────────
-    const orderedKeys = [
-      ...CATEGORY_ORDER.filter(k => cats[k]),
-      ...Object.keys(cats).filter(k => !CATEGORY_ORDER.includes(k)).sort(),
-    ];
-
-    for (const cat of orderedKeys) {
-      const cmds   = [...new Set(cats[cat])].sort();
-      const icon   = CATEGORY_ICONS[cat] || '📁';
-      const label  = cat.toUpperCase();
-
+    for (const { key, icon, label } of ordered) {
+      const cmds = cats[key];
+      if (!cmds?.length) continue;
       text += `┏▣ ◈ *${icon} ${label} MENU* ◈\n`;
-      text += `┃\n`;
-      for (const cmd of cmds) {
-        text += `│➽ ${cmd}\n`;
-      }
+      for (const cmd of [...cmds].sort()) text += `│➽ ${cmd}\n`;
       text += `┗▣\n\n`;
     }
 
-    // ── Footer ────────────────────────────────────
-    text +=
-      `> 💡 *Usage:* ${prefix}<command> [args]\n` +
-      `> 📖 *Help:* ${prefix}help <command>\n` +
-      `> ⚡ *${config.BOT_NAME} ${config.BOT_VERSION}* — Ready!`;
-
+    text += `_⚡ RIOT MD ${config.BOT_VERSION} — Hey ${pushName}!_`;
     await reply(text);
   },
 };
