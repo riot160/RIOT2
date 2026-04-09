@@ -6,116 +6,348 @@
 <title>RIOT MD Dashboard</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
 <style>
-  :root{--bg:#0a0a0f;--bg2:#0f0f1a;--bg3:#14142a;--cyan:#00fff7;--green:#00ff88;
-        --red:#ff4466;--yellow:#ffcc00;--text:#ccd6f6;--muted:#8892b0;
-        --border:rgba(0,255,247,.15);--glow:0 0 20px rgba(0,255,247,.3)}
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;min-height:100vh;overflow-x:hidden}
-  /* Grid bg */
-  body::before{content:'';position:fixed;inset:0;background-image:
-    linear-gradient(var(--border) 1px,transparent 1px),
+/* ══════════════════════════════════════════════
+   THEME SYSTEM
+══════════════════════════════════════════════ */
+:root,
+[data-theme="cyber"] {
+  --bg:#0a0a0f;--bg2:#0f0f1a;--bg3:#14142a;
+  --cyan:#00fff7;--green:#00ff88;--red:#ff4466;--yellow:#ffcc00;
+  --text:#ccd6f6;--muted:#8892b0;
+  --border:rgba(0,255,247,.15);--glow:0 0 20px rgba(0,255,247,.3);
+  --matrix-color:#00fff7;--particle-color:0,255,247;
+  --accent1:#00fff7;--accent2:#00ff88;
+  --scanline:rgba(0,255,247,.03);
+  --theme-name:"CYBER TEAL";
+}
+[data-theme="blood"] {
+  --bg:#0f0505;--bg2:#1a0808;--bg3:#220a0a;
+  --cyan:#ff2244;--green:#ff6644;--red:#ff0022;--yellow:#ff9900;
+  --text:#f0ccd6;--muted:#a08090;
+  --border:rgba(255,34,68,.15);--glow:0 0 20px rgba(255,34,68,.3);
+  --matrix-color:#ff2244;--particle-color:255,34,68;
+  --accent1:#ff2244;--accent2:#ff6644;
+  --scanline:rgba(255,34,68,.03);
+  --theme-name:"BLOOD RED";
+}
+[data-theme="matrix"] {
+  --bg:#000a00;--bg2:#001500;--bg3:#002200;
+  --cyan:#00ff41;--green:#00cc33;--red:#ff4400;--yellow:#aaff00;
+  --text:#ccffcc;--muted:#44aa44;
+  --border:rgba(0,255,65,.15);--glow:0 0 20px rgba(0,255,65,.3);
+  --matrix-color:#00ff41;--particle-color:0,255,65;
+  --accent1:#00ff41;--accent2:#aaff00;
+  --scanline:rgba(0,255,65,.04);
+  --theme-name:"MATRIX";
+}
+[data-theme="void"] {
+  --bg:#05050f;--bg2:#08081a;--bg3:#0c0c28;
+  --cyan:#aa88ff;--green:#ff88cc;--red:#ff4488;--yellow:#88aaff;
+  --text:#ccccff;--muted:#6666aa;
+  --border:rgba(170,136,255,.15);--glow:0 0 20px rgba(170,136,255,.3);
+  --matrix-color:#aa88ff;--particle-color:170,136,255;
+  --accent1:#aa88ff;--accent2:#ff88cc;
+  --scanline:rgba(170,136,255,.03);
+  --theme-name:"VOID PURPLE";
+}
+[data-theme="gold"] {
+  --bg:#0a0800;--bg2:#14110a;--bg3:#1e1a0f;
+  --cyan:#ffd700;--green:#ffaa00;--red:#ff4400;--yellow:#fff0aa;
+  --text:#ffe8aa;--muted:#997744;
+  --border:rgba(255,215,0,.15);--glow:0 0 20px rgba(255,215,0,.3);
+  --matrix-color:#ffd700;--particle-color:255,215,0;
+  --accent1:#ffd700;--accent2:#ffaa00;
+  --scanline:rgba(255,215,0,.03);
+  --theme-name:"GOLD";
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:'Courier New',monospace;min-height:100vh;overflow-x:hidden;transition:background .4s,color .4s}
+
+/* ── LIVE BACKGROUND CANVAS ── */
+#bgCanvas{position:fixed;inset:0;z-index:0;opacity:.55;pointer-events:none}
+
+/* ── SCANLINES OVERLAY ── */
+body::after{content:'';position:fixed;inset:0;z-index:2;pointer-events:none;
+  background:repeating-linear-gradient(0deg,var(--scanline) 0px,var(--scanline) 1px,transparent 1px,transparent 3px);
+  animation:scanMove 8s linear infinite}
+@keyframes scanMove{0%{background-position:0 0}100%{background-position:0 300px}}
+
+/* ── GRID BG ── */
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),
     linear-gradient(90deg,var(--border) 1px,transparent 1px);
-    background-size:40px 40px;pointer-events:none;z-index:0}
+  background-size:40px 40px;transition:background .4s}
 
-  /* ── Login ── */
-  #loginPage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100}
-  .login-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-             padding:40px;width:360px;box-shadow:var(--glow)}
-  .login-box h1{color:var(--cyan);font-size:1.6rem;margin-bottom:4px;text-align:center}
-  .login-box p{color:var(--muted);text-align:center;margin-bottom:24px;font-size:.85rem}
-  .inp{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;
-       color:var(--text);padding:10px 14px;font-family:inherit;font-size:.95rem;outline:none;
-       transition:.2s}
-  .inp:focus{border-color:var(--cyan);box-shadow:0 0 8px rgba(0,255,247,.2)}
-  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
-       padding:10px 20px;border-radius:6px;border:none;cursor:pointer;
-       font-family:inherit;font-weight:600;font-size:.9rem;transition:.2s;width:100%;margin-top:12px}
-  .btn-cyan{background:transparent;border:1px solid var(--cyan);color:var(--cyan)}
-  .btn-cyan:hover{background:rgba(0,255,247,.1);box-shadow:var(--glow)}
-  .btn-red{background:transparent;border:1px solid var(--red);color:var(--red)}
-  .btn-red:hover{background:rgba(255,68,102,.1)}
+/* ── GLITCH EFFECT ── */
+@keyframes glitch{
+  0%,100%{clip-path:inset(0 0 100% 0);transform:translate(0)}
+  10%{clip-path:inset(10% 0 80% 0);transform:translate(-3px,1px)}
+  20%{clip-path:inset(50% 0 30% 0);transform:translate(3px,-1px)}
+  30%{clip-path:inset(30% 0 50% 0);transform:translate(0)}
+  40%{clip-path:inset(80% 0 5% 0);transform:translate(2px,2px)}
+  50%{clip-path:inset(0 0 0 0);transform:translate(0)}
+}
+.glitch{position:relative}
+.glitch::before,.glitch::after{content:attr(data-text);position:absolute;inset:0;opacity:.7}
+.glitch::before{color:#ff0055;animation:glitch 4s step-end infinite;animation-delay:.1s}
+.glitch::after{color:#00ffff;animation:glitch 4s step-end infinite;animation-delay:.3s;transform:scaleX(-1)}
 
-  /* ── App shell ── */
-  #app{display:none;position:relative;z-index:1}
-  .sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);
-           border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column}
-  .logo{color:var(--cyan);font-size:1.3rem;font-weight:700;padding:0 20px 20px;
-        border-bottom:1px solid var(--border);text-shadow:0 0 10px var(--cyan)}
-  .logo span{color:var(--green)}
-  .nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;color:var(--muted);
-            cursor:pointer;transition:.2s;border-left:3px solid transparent;font-size:.9rem}
-  .nav-item:hover,.nav-item.active{color:var(--cyan);border-left-color:var(--cyan);
-                                    background:rgba(0,255,247,.05)}
-  .main{margin-left:220px;padding:24px;min-height:100vh}
-  .page{display:none}.page.active{display:block}
-  h2{color:var(--cyan);margin-bottom:20px;font-size:1.3rem;display:flex;align-items:center;gap:8px}
+/* ── PULSE RING ── */
+@keyframes pulseRing{0%{transform:scale(.95);box-shadow:0 0 0 0 rgba(var(--particle-color),.4)}
+  70%{transform:scale(1);box-shadow:0 0 0 10px rgba(var(--particle-color),0)}100%{transform:scale(.95);box-shadow:0 0 0 0 rgba(var(--particle-color),0)}}
+.pulse{animation:pulseRing 2s infinite}
 
-  /* ── Stats cards ── */
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
-  .card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;
-        transition:.2s;position:relative;overflow:hidden}
-  .card::before{content:'';position:absolute;inset:0;opacity:0;transition:.2s;
-                background:radial-gradient(circle at top right,rgba(0,255,247,.06),transparent)}
-  .card:hover::before{opacity:1}
-  .card-label{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
-  .card-value{font-size:2rem;font-weight:700;color:var(--cyan);text-shadow:0 0 10px rgba(0,255,247,.4)}
-  .card-value.green{color:var(--green);text-shadow:0 0 10px rgba(0,255,136,.4)}
-  .card-value.yellow{color:var(--yellow)}
+/* ── LOGIN ── */
+#loginPage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:100}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
+           padding:40px;width:380px;box-shadow:var(--glow);position:relative;overflow:hidden;transition:.4s}
+.login-box::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(var(--particle-color),.04),transparent);pointer-events:none}
+.login-box h1{color:var(--cyan);font-size:1.7rem;margin-bottom:4px;text-align:center;text-shadow:0 0 20px var(--cyan)}
+.login-box p{color:var(--muted);text-align:center;margin-bottom:24px;font-size:.85rem}
+.inp{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:6px;
+     color:var(--text);padding:10px 14px;font-family:inherit;font-size:.95rem;outline:none;transition:.3s}
+.inp:focus{border-color:var(--cyan);box-shadow:0 0 8px rgba(var(--particle-color),.25)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;
+     padding:10px 20px;border-radius:6px;border:none;cursor:pointer;
+     font-family:inherit;font-weight:600;font-size:.9rem;transition:.2s;width:100%;margin-top:12px}
+.btn-cyan{background:transparent;border:1px solid var(--cyan);color:var(--cyan)}
+.btn-cyan:hover{background:rgba(var(--particle-color),.12);box-shadow:var(--glow)}
+.btn-red{background:transparent;border:1px solid var(--red);color:var(--red)}
+.btn-red:hover{background:rgba(255,68,102,.1)}
+.btn-sm{width:auto;padding:6px 14px;font-size:.8rem;margin-top:0}
 
-  /* ── Tables ── */
-  .table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
-  table{width:100%;border-collapse:collapse}
-  th{background:var(--bg3);color:var(--muted);font-size:.75rem;text-transform:uppercase;
-     letter-spacing:.07em;padding:12px 16px;text-align:left}
-  td{padding:12px 16px;border-top:1px solid var(--border);font-size:.85rem;color:var(--text)}
-  tr:hover td{background:rgba(0,255,247,.03)}
-  .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;
-         font-size:.75rem;font-weight:600}
-  .badge-green{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.3)}
-  .badge-yellow{background:rgba(255,204,0,.12);color:var(--yellow);border:1px solid rgba(255,204,0,.3)}
-  .badge-red{background:rgba(255,68,102,.12);color:var(--red);border:1px solid rgba(255,68,102,.3)}
+/* ── APP SHELL ── */
+#app{display:none;position:relative;z-index:1}
+.sidebar{position:fixed;left:0;top:0;bottom:0;width:220px;background:var(--bg2);
+         border-right:1px solid var(--border);padding:20px 0;display:flex;flex-direction:column;
+         transition:.4s;z-index:50}
+.logo{color:var(--cyan);font-size:1.3rem;font-weight:700;padding:0 20px 20px;
+      border-bottom:1px solid var(--border);text-shadow:0 0 12px var(--cyan);letter-spacing:.05em}
+.logo span{color:var(--green)}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 20px;color:var(--muted);
+          cursor:pointer;transition:.2s;border-left:3px solid transparent;font-size:.9rem}
+.nav-item:hover,.nav-item.active{color:var(--cyan);border-left-color:var(--cyan);background:rgba(var(--particle-color),.05)}
+.main{margin-left:220px;padding:24px;min-height:100vh}
+.page{display:none}.page.active{display:block}
+h2{color:var(--cyan);margin-bottom:20px;font-size:1.3rem;display:flex;align-items:center;gap:8px;text-shadow:0 0 8px var(--cyan)}
 
-  /* ── Pairing box ── */
-  .pair-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;
-            max-width:540px;padding:32px;box-shadow:var(--glow)}
-  .pair-code{background:var(--bg3);border:2px dashed var(--cyan);border-radius:10px;
-             padding:24px;text-align:center;margin:20px 0;font-size:2.4rem;font-weight:700;
-             color:var(--cyan);letter-spacing:.2em;text-shadow:0 0 16px rgba(0,255,247,.5);
-             min-height:80px;display:flex;align-items:center;justify-content:center}
-  .pair-status{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:16px}
+/* ── STATUS BAR ── */
+.status-bar{display:flex;align-items:center;gap:20px;background:var(--bg2);border:1px solid var(--border);
+            border-radius:8px;padding:8px 16px;margin-bottom:20px;font-size:.78rem;color:var(--muted);flex-wrap:wrap}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.status-item{display:flex;align-items:center;gap:6px}
 
-  /* ── Logs ── */
-  #logBox{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
-          height:400px;overflow-y:auto;padding:12px;font-size:.8rem;line-height:1.6}
-  .log-info{color:var(--text)}.log-success{color:var(--green)}
-  .log-warn{color:var(--yellow)}.log-error{color:var(--red)}
+/* ── HEX CLOCK ── */
+.hex-clock{font-size:.82rem;color:var(--cyan);letter-spacing:.06em;font-family:'Courier New',monospace}
 
-  /* ── Plugin grid ── */
-  .plugin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-  .plugin-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;
-               padding:14px;font-size:.85rem}
-  .plugin-cmd{color:var(--cyan);font-weight:700;margin-bottom:4px}
-  .plugin-desc{color:var(--muted);font-size:.78rem}
-  .plugin-cat{margin-top:8px}
+/* ── THREAT METER ── */
+.threat-bar{flex:1;min-width:120px}
+.threat-label{font-size:.7rem;color:var(--muted);margin-bottom:3px}
+.threat-track{height:4px;background:var(--bg3);border-radius:2px;overflow:hidden}
+.threat-fill{height:100%;border-radius:2px;background:linear-gradient(90deg,var(--green),var(--yellow),var(--red));transition:width .8s ease}
 
-  .row{display:flex;gap:12px;align-items:flex-end}
-  .row .inp-wrap{flex:1}
-  label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}
-  .sep{height:1px;background:var(--border);margin:24px 0}
-  .uptime{color:var(--muted);font-size:.8rem;position:fixed;bottom:12px;left:230px}
+/* ── STATS CARDS ── */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;margin-bottom:28px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:20px;
+      transition:.3s;position:relative;overflow:hidden;cursor:default}
+.card::before{content:'';position:absolute;inset:0;opacity:0;transition:.3s;
+              background:radial-gradient(circle at top right,rgba(var(--particle-color),.06),transparent)}
+.card:hover::before{opacity:1}
+.card:hover{transform:translateY(-2px);box-shadow:var(--glow)}
+.card-label{color:var(--muted);font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px}
+.card-value{font-size:2rem;font-weight:700;color:var(--cyan);text-shadow:0 0 10px rgba(var(--particle-color),.4);transition:.4s}
+.card-value.green{color:var(--green);text-shadow:0 0 10px rgba(0,255,136,.4)}
+.card-value.yellow{color:var(--yellow)}
+.card-mini{font-size:.72rem;color:var(--muted);margin-top:4px}
+
+/* ── MINI SPARKLINE ── */
+.sparkline{margin-top:8px;height:28px}
+
+/* ── ACTIVITY GRAPH ── */
+.graph-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:24px}
+.graph-title{color:var(--muted);font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px}
+#activityCanvas{width:100%;height:80px;display:block}
+
+/* ── SYSTEM METRICS ── */
+.metrics-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px}
+.metric-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:14px}
+.metric-name{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;display:flex;justify-content:space-between}
+.metric-name span{color:var(--cyan)}
+.metric-bar{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden}
+.metric-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent1),var(--accent2));transition:width 1s ease;box-shadow:0 0 6px var(--accent1)}
+
+/* ── TABLES ── */
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+th{background:var(--bg3);color:var(--muted);font-size:.75rem;text-transform:uppercase;
+   letter-spacing:.07em;padding:12px 16px;text-align:left}
+td{padding:12px 16px;border-top:1px solid var(--border);font-size:.85rem;color:var(--text)}
+tr:hover td{background:rgba(var(--particle-color),.03)}
+.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 10px;border-radius:20px;font-size:.75rem;font-weight:600}
+.badge-green{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+.badge-yellow{background:rgba(255,204,0,.12);color:var(--yellow);border:1px solid rgba(255,204,0,.3)}
+.badge-red{background:rgba(255,68,102,.12);color:var(--red);border:1px solid rgba(255,68,102,.3)}
+
+/* ── PAIRING ── */
+.pair-box{background:var(--bg2);border:1px solid var(--border);border-radius:12px;max-width:540px;padding:32px;box-shadow:var(--glow)}
+.pair-code{background:var(--bg3);border:2px dashed var(--cyan);border-radius:10px;
+           padding:24px;text-align:center;margin:20px 0;font-size:2.4rem;font-weight:700;
+           color:var(--cyan);letter-spacing:.2em;text-shadow:0 0 16px rgba(var(--particle-color),.5);
+           min-height:80px;display:flex;align-items:center;justify-content:center;transition:.4s}
+.pair-status{text-align:center;color:var(--muted);font-size:.85rem;margin-bottom:16px}
+
+/* ── LOGS ── */
+#logBox{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+        height:400px;overflow-y:auto;padding:12px;font-size:.8rem;line-height:1.7}
+#logBox::-webkit-scrollbar{width:4px}
+#logBox::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.log-info{color:var(--text)}.log-success{color:var(--green)}
+.log-warn{color:var(--yellow)}.log-error{color:var(--red)}
+.log-line-new{animation:logFade .4s ease}
+@keyframes logFade{from{background:rgba(var(--particle-color),.07)}to{background:transparent}}
+
+/* ── PLUGINS ── */
+.plugin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
+.plugin-card{background:var(--bg2);border:1px solid var(--border);border-radius:8px;
+             padding:14px;font-size:.85rem;transition:.2s}
+.plugin-card:hover{border-color:var(--cyan);transform:translateY(-2px);box-shadow:var(--glow)}
+.plugin-cmd{color:var(--cyan);font-weight:700;margin-bottom:4px}
+.plugin-desc{color:var(--muted);font-size:.78rem}
+.plugin-cat{margin-top:8px}
+
+/* ── THEME PANEL ── */
+.theme-panel{position:fixed;right:0;top:0;bottom:0;width:260px;background:var(--bg2);
+             border-left:1px solid var(--border);padding:20px;z-index:200;
+             transform:translateX(100%);transition:.35s cubic-bezier(.4,0,.2,1);overflow-y:auto}
+.theme-panel.open{transform:translateX(0);box-shadow:-10px 0 40px rgba(0,0,0,.5)}
+.theme-panel h3{color:var(--cyan);margin-bottom:16px;font-size:1rem}
+.theme-toggle{position:fixed;right:20px;top:20px;z-index:201;background:var(--bg2);
+              border:1px solid var(--border);border-radius:8px;padding:8px 12px;
+              color:var(--cyan);cursor:pointer;font-family:inherit;font-size:.8rem;
+              transition:.2s;display:flex;align-items:center;gap:6px}
+.theme-toggle:hover{background:rgba(var(--particle-color),.1);box-shadow:var(--glow)}
+.theme-option{display:flex;align-items:center;gap:10px;padding:10px;border-radius:6px;
+              cursor:pointer;border:1px solid transparent;margin-bottom:8px;transition:.2s;font-size:.82rem}
+.theme-option:hover{border-color:var(--border);background:rgba(var(--particle-color),.05)}
+.theme-option.active{border-color:var(--cyan);background:rgba(var(--particle-color),.1)}
+.theme-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.panel-sep{height:1px;background:var(--border);margin:16px 0}
+.panel-label{color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.toggle-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;font-size:.82rem;color:var(--text)}
+.toggle-switch{position:relative;width:36px;height:20px;cursor:pointer}
+.toggle-switch input{display:none}
+.toggle-track{position:absolute;inset:0;background:var(--bg3);border-radius:10px;border:1px solid var(--border);transition:.2s}
+.toggle-switch input:checked + .toggle-track{background:rgba(var(--particle-color),.3);border-color:var(--cyan)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;
+              background:var(--muted);transition:.2s}
+.toggle-switch input:checked ~ .toggle-thumb{left:18px;background:var(--cyan)}
+.bg-options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px}
+.bg-opt{padding:8px;border-radius:6px;border:1px solid var(--border);text-align:center;
+        cursor:pointer;font-size:.74rem;color:var(--muted);transition:.2s}
+.bg-opt:hover,.bg-opt.active{border-color:var(--cyan);color:var(--cyan);background:rgba(var(--particle-color),.08)}
+
+/* ── TERMINAL WIDGET ── */
+.terminal-widget{background:var(--bg3);border:1px solid var(--border);border-radius:8px;
+                 padding:14px;margin-bottom:20px;font-size:.78rem}
+.term-header{display:flex;align-items:center;gap:6px;margin-bottom:10px;color:var(--muted)}
+.term-dot{width:8px;height:8px;border-radius:50%}
+.term-body{color:var(--green);line-height:1.8;min-height:60px}
+.term-cursor{display:inline-block;width:8px;height:13px;background:var(--cyan);animation:blink 1s step-end infinite;vertical-align:middle;margin-left:2px}
+
+/* ── NETWORK GRAPH ── */
+.net-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:10px;padding:18px;margin-bottom:20px}
+
+/* ── MISC ── */
+.row{display:flex;gap:12px;align-items:flex-end}
+.row .inp-wrap{flex:1}
+label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}
+.sep{height:1px;background:var(--border);margin:24px 0}
+.uptime{color:var(--muted);font-size:.8rem;position:fixed;bottom:12px;left:230px;z-index:10}
+.text-cyan{color:var(--cyan)} .text-green{color:var(--green)} .text-muted{color:var(--muted)}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:700px){.two-col{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 
+<!-- ── LIVE BACKGROUND ── -->
+<canvas id="bgCanvas"></canvas>
+
+<!-- ── THEME TOGGLE ── -->
+<button class="theme-toggle" onclick="toggleThemePanel()" id="themeBtn">🎨 THEMES</button>
+
+<!-- ── THEME PANEL ── -->
+<div class="theme-panel" id="themePanel">
+  <h3>⚙ SYSTEM SETTINGS</h3>
+
+  <div class="panel-label">COLOR THEME</div>
+  <div class="theme-option active" data-theme="cyber" onclick="setTheme('cyber',this)">
+    <div class="theme-dot" style="background:#00fff7;box-shadow:0 0 6px #00fff7"></div>
+    CYBER TEAL
+  </div>
+  <div class="theme-option" data-theme="blood" onclick="setTheme('blood',this)">
+    <div class="theme-dot" style="background:#ff2244;box-shadow:0 0 6px #ff2244"></div>
+    BLOOD RED
+  </div>
+  <div class="theme-option" data-theme="matrix" onclick="setTheme('matrix',this)">
+    <div class="theme-dot" style="background:#00ff41;box-shadow:0 0 6px #00ff41"></div>
+    MATRIX GREEN
+  </div>
+  <div class="theme-option" data-theme="void" onclick="setTheme('void',this)">
+    <div class="theme-dot" style="background:#aa88ff;box-shadow:0 0 6px #aa88ff"></div>
+    VOID PURPLE
+  </div>
+  <div class="theme-option" data-theme="gold" onclick="setTheme('gold',this)">
+    <div class="theme-dot" style="background:#ffd700;box-shadow:0 0 6px #ffd700"></div>
+    GOLD CIRCUIT
+  </div>
+
+  <div class="panel-sep"></div>
+  <div class="panel-label">LIVE BACKGROUND</div>
+  <div class="bg-options">
+    <div class="bg-opt active" data-bg="matrix" onclick="setBg('matrix',this)">MATRIX</div>
+    <div class="bg-opt" data-bg="particles" onclick="setBg('particles',this)">PARTICLES</div>
+    <div class="bg-opt" data-bg="circuit" onclick="setBg('circuit',this)">CIRCUIT</div>
+    <div class="bg-opt" data-bg="rain" onclick="setBg('rain',this)">RAIN</div>
+    <div class="bg-opt" data-bg="none" onclick="setBg('none',this)">NONE</div>
+  </div>
+
+  <div class="panel-sep"></div>
+  <div class="panel-label">EFFECTS</div>
+  <div class="toggle-row">Scanlines
+    <label class="toggle-switch"><input type="checkbox" id="togScanlines" checked onchange="toggleEffect('scanlines',this.checked)">
+      <div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div class="toggle-row">Glitch Effect
+    <label class="toggle-switch"><input type="checkbox" id="togGlitch" checked onchange="toggleEffect('glitch',this.checked)">
+      <div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div class="toggle-row">Glow Cards
+    <label class="toggle-switch"><input type="checkbox" id="togGlow" checked onchange="toggleEffect('glow',this.checked)">
+      <div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+  <div class="toggle-row">Pulse Badges
+    <label class="toggle-switch"><input type="checkbox" id="togPulse" checked onchange="toggleEffect('pulse',this.checked)">
+      <div class="toggle-track"></div><div class="toggle-thumb"></div></label>
+  </div>
+
+  <div class="panel-sep"></div>
+  <div class="panel-label">BG OPACITY</div>
+  <input type="range" min="10" max="90" value="55" style="width:100%;accent-color:var(--cyan)"
+         oninput="document.getElementById('bgCanvas').style.opacity=this.value/100">
+</div>
+
 <!-- ── LOGIN ── -->
 <div id="loginPage">
   <div class="login-box">
-    <h1>⚡ RIOT MD</h1>
+    <h1 class="glitch" data-text="⚡ RIOT MD">⚡ RIOT MD</h1>
     <p>Multi-Device WhatsApp Platform</p>
     <label>Password</label>
     <input type="password" class="inp" id="passInp" placeholder="Enter dashboard password"
            onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="btn btn-cyan" onclick="doLogin()">🔓 Sign In</button>
+    <button class="btn btn-cyan pulse" onclick="doLogin()">🔓 Sign In</button>
     <p id="loginErr" style="color:var(--red);margin-top:10px;font-size:.82rem;text-align:center"></p>
   </div>
 </div>
@@ -123,30 +355,81 @@
 <!-- ── APP ── -->
 <div id="app">
   <div class="sidebar">
-    <div class="logo">⚡ RIOT <span>MD</span></div>
+    <div class="logo glitch" data-text="⚡ RIOT MD">⚡ RIOT <span>MD</span></div>
     <div class="nav-item active" onclick="nav('dashboard')">📊 Dashboard</div>
     <div class="nav-item" onclick="nav('pair')">📱 Pair Device</div>
     <div class="nav-item" onclick="nav('sessions')">🔗 Sessions</div>
     <div class="nav-item" onclick="nav('plugins')">🧩 Plugins</div>
     <div class="nav-item" onclick="nav('logs')">📜 Logs</div>
+    <div class="nav-item" onclick="nav('network')">📡 Network</div>
+    <div class="nav-item" onclick="nav('terminal')">💻 Terminal</div>
     <div class="nav-item" style="margin-top:auto" onclick="logout()">🚪 Logout</div>
   </div>
 
   <div class="main">
 
-    <!-- DASHBOARD -->
+    <!-- ── STATUS BAR ── -->
+    <div class="status-bar">
+      <div class="status-item"><div class="status-dot"></div><span id="statusText">ONLINE</span></div>
+      <div class="status-item">🕐 <span class="hex-clock" id="hexClock">--:--:--</span></div>
+      <div class="status-item">📅 <span id="dateDisp" style="font-size:.78rem;color:var(--muted)"></span></div>
+      <div class="threat-bar">
+        <div class="threat-label">THREAT LEVEL <span id="threatPct" style="color:var(--cyan)">0%</span></div>
+        <div class="threat-track"><div class="threat-fill" id="threatFill" style="width:0%"></div></div>
+      </div>
+      <div class="status-item" style="margin-left:auto;color:var(--cyan);font-size:.75rem" id="themeNameDisp">CYBER TEAL</div>
+    </div>
+
+    <!-- ── DASHBOARD ── -->
     <div class="page active" id="page-dashboard">
       <h2>📊 Overview</h2>
       <div class="cards">
-        <div class="card"><div class="card-label">Total Sessions</div><div class="card-value" id="s-total">0</div></div>
-        <div class="card"><div class="card-label">Connected</div><div class="card-value green" id="s-connected">0</div></div>
-        <div class="card"><div class="card-label">Reconnecting</div><div class="card-value yellow" id="s-reconnecting">0</div></div>
-        <div class="card"><div class="card-label">Messages</div><div class="card-value" id="s-messages">0</div></div>
-        <div class="card"><div class="card-label">Commands</div><div class="card-value" id="s-commands">0</div></div>
+        <div class="card"><div class="card-label">Total Sessions</div><div class="card-value" id="s-total">0</div><div class="card-mini">Registered bots</div></div>
+        <div class="card"><div class="card-label">Connected</div><div class="card-value green" id="s-connected">0</div><div class="card-mini">Live connections</div></div>
+        <div class="card"><div class="card-label">Reconnecting</div><div class="card-value yellow" id="s-reconnecting">0</div><div class="card-mini">Retrying</div></div>
+        <div class="card"><div class="card-label">Messages</div><div class="card-value" id="s-messages">0</div><div class="card-mini">Total processed</div></div>
+        <div class="card"><div class="card-label">Commands</div><div class="card-value" id="s-commands">0</div><div class="card-mini">Total executed</div></div>
+      </div>
+
+      <!-- SYSTEM METRICS -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-name">CPU USAGE <span id="cpuVal">0%</span></div>
+          <div class="metric-bar"><div class="metric-fill" id="cpuBar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-name">MEMORY <span id="memVal">0%</span></div>
+          <div class="metric-bar"><div class="metric-fill" id="memBar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-name">MSG QUEUE <span id="queueVal">0</span></div>
+          <div class="metric-bar"><div class="metric-fill" id="queueBar" style="width:0%"></div></div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-name">BANDWIDTH <span id="bwVal">0 KB/s</span></div>
+          <div class="metric-bar"><div class="metric-fill" id="bwBar" style="width:0%"></div></div>
+        </div>
+      </div>
+
+      <!-- ACTIVITY GRAPH -->
+      <div class="graph-wrap">
+        <div class="graph-title">📈 MESSAGE ACTIVITY (LAST 60s)</div>
+        <canvas id="activityCanvas" height="80"></canvas>
+      </div>
+
+      <!-- TERMINAL READOUT -->
+      <div class="terminal-widget">
+        <div class="term-header">
+          <div class="term-dot" style="background:#ff4466"></div>
+          <div class="term-dot" style="background:#ffcc00"></div>
+          <div class="term-dot" style="background:#00ff88"></div>
+          <span style="margin-left:8px">riot-md ~ system</span>
+        </div>
+        <div class="term-body" id="termReadout"></div>
       </div>
     </div>
 
-    <!-- PAIR -->
+    <!-- ── PAIR ── -->
     <div class="page" id="page-pair">
       <h2>📱 Pair New Device</h2>
       <div class="pair-box">
@@ -162,14 +445,14 @@
         <div class="sep"></div>
         <p style="color:var(--muted);font-size:.82rem;line-height:1.6">
           1. Open WhatsApp on your phone<br>
-          2. Go to <b>Settings → Linked Devices → Link a Device</b><br>
-          3. Tap <b>Link with Phone Number</b> instead of QR<br>
+          2. Go to <b style="color:var(--cyan)">Settings → Linked Devices → Link a Device</b><br>
+          3. Tap <b style="color:var(--cyan)">Link with Phone Number</b> instead of QR<br>
           4. Enter the code shown above
         </p>
       </div>
     </div>
 
-    <!-- SESSIONS -->
+    <!-- ── SESSIONS ── -->
     <div class="page" id="page-sessions">
       <h2>🔗 Active Sessions</h2>
       <button class="btn btn-cyan" style="width:auto;margin-bottom:16px" onclick="loadSessions()">🔄 Refresh</button>
@@ -181,31 +464,89 @@
       </div>
     </div>
 
-    <!-- PLUGINS -->
+    <!-- ── PLUGINS ── -->
     <div class="page" id="page-plugins">
       <h2>🧩 Loaded Plugins</h2>
       <div id="pluginGrid" class="plugin-grid"></div>
     </div>
 
-    <!-- LOGS -->
+    <!-- ── LOGS ── -->
     <div class="page" id="page-logs">
       <h2>📜 Live Logs</h2>
-      <button class="btn btn-red" style="width:auto;margin-bottom:12px" onclick="clearLogs()">🗑 Clear</button>
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap">
+        <button class="btn btn-red btn-sm" onclick="clearLogs()">🗑 Clear</button>
+        <button class="btn btn-cyan btn-sm" onclick="filterLogs('all')" id="f-all">ALL</button>
+        <button class="btn btn-cyan btn-sm" onclick="filterLogs('success')" id="f-success">SUCCESS</button>
+        <button class="btn btn-cyan btn-sm" onclick="filterLogs('warn')" id="f-warn">WARN</button>
+        <button class="btn btn-cyan btn-sm" onclick="filterLogs('error')" id="f-error">ERROR</button>
+        <span style="color:var(--muted);font-size:.78rem;align-self:center">Auto-scroll: </span>
+        <label class="toggle-switch" style="align-self:center">
+          <input type="checkbox" id="autoScroll" checked>
+          <div class="toggle-track"></div><div class="toggle-thumb"></div>
+        </label>
+      </div>
       <div id="logBox"></div>
     </div>
 
-  </div>
-  <div class="uptime" id="uptime"></div>
-</div>
+    <!-- ── NETWORK ── -->
+    <div class="page" id="page-network">
+      <h2>📡 Network Monitor</h2>
+      <div class="two-col">
+        <div>
+          <div class="graph-wrap">
+            <div class="graph-title">⬆ TX / ⬇ RX (KB/s)</div>
+            <canvas id="netCanvas" height="120" style="width:100%;display:block"></canvas>
+          </div>
+          <div class="metrics-row" style="grid-template-columns:1fr 1fr">
+            <div class="metric-card"><div class="metric-name">PING <span id="netPing">--ms</span></div>
+              <div class="metric-bar"><div class="metric-fill" id="pingBar" style="width:20%"></div></div></div>
+            <div class="metric-card"><div class="metric-name">PACKET LOSS <span id="netLoss">0%</span></div>
+              <div class="metric-bar"><div class="metric-fill" id="lossBar" style="width:0%"></div></div></div>
+          </div>
+        </div>
+        <div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Event</th><th>Time</th><th>Size</th></tr></thead>
+            <tbody id="netTable"></tbody></table>
+          </div>
+        </div>
+      </div>
+    </div>
 
+    <!-- ── TERMINAL ── -->
+    <div class="page" id="page-terminal">
+      <h2>💻 System Terminal</h2>
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:16px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+          <div class="term-dot" style="background:#ff4466"></div>
+          <div class="term-dot" style="background:#ffcc00"></div>
+          <div class="term-dot" style="background:#00ff88"></div>
+          <span style="color:var(--muted);font-size:.78rem;margin-left:8px">root@riot-md:~$</span>
+        </div>
+        <div id="termOutput" style="height:340px;overflow-y:auto;font-size:.82rem;line-height:1.8;color:var(--green);padding-bottom:8px"></div>
+        <div style="display:flex;align-items:center;gap:8px;border-top:1px solid var(--border);padding-top:10px">
+          <span style="color:var(--cyan);font-size:.82rem">root@riot-md:~$</span>
+          <input id="termInput" class="inp" style="border:none;background:transparent;flex:1;padding:4px 0;color:var(--green)"
+                 placeholder="enter command..." onkeydown="handleTermInput(event)"/>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /main -->
+  <div class="uptime" id="uptime"></div>
+</div><!-- /app -->
+
+<!-- ════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════ -->
 <script>
+/* ══ Token / API ══ */
 let TOKEN = localStorage.getItem('riot_token');
 const API = '';
 
 async function api(method, path, body) {
   const res = await fetch(API + path, {
-    method, headers: { 'Content-Type': 'application/json',
-                       'Authorization': `Bearer ${TOKEN}` },
+    method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${TOKEN}` },
     body: body ? JSON.stringify(body) : undefined
   });
   return res.json();
@@ -217,8 +558,7 @@ async function doLogin() {
     headers: {'Content-Type':'application/json'}, body: JSON.stringify({ password: pw }) });
   const d = await r.json();
   if (d.token) {
-    TOKEN = d.token;
-    localStorage.setItem('riot_token', TOKEN);
+    TOKEN = d.token; localStorage.setItem('riot_token', TOKEN);
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     initApp();
@@ -227,10 +567,7 @@ async function doLogin() {
   }
 }
 
-function logout() {
-  localStorage.removeItem('riot_token');
-  location.reload();
-}
+function logout() { localStorage.removeItem('riot_token'); location.reload(); }
 
 function nav(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
@@ -241,7 +578,7 @@ function nav(page) {
   if (page === 'plugins') loadPlugins();
 }
 
-// ── Socket.io ──
+/* ══ Socket.io ══ */
 function initApp() {
   const socket = io();
   socket.on('stats', updateStats);
@@ -257,8 +594,7 @@ function initApp() {
       document.getElementById('pairStatus').textContent = `Session ${d.userId} is online`;
     }
   });
-  loadSessions();
-  loadPlugins();
+  loadSessions(); loadPlugins();
   setInterval(async () => {
     const d = await api('GET', '/api/status');
     if (d.uptime) document.getElementById('uptime').textContent =
@@ -267,11 +603,11 @@ function initApp() {
 }
 
 function updateStats(s) {
-  document.getElementById('s-total').textContent      = s.total        || 0;
-  document.getElementById('s-connected').textContent  = s.connected    || 0;
-  document.getElementById('s-reconnecting').textContent = s.reconnecting || 0;
-  document.getElementById('s-messages').textContent   = s.messages     || 0;
-  document.getElementById('s-commands').textContent   = s.commands     || 0;
+  document.getElementById('s-total').textContent       = s.total        || 0;
+  document.getElementById('s-connected').textContent   = s.connected    || 0;
+  document.getElementById('s-reconnecting').textContent= s.reconnecting || 0;
+  document.getElementById('s-messages').textContent    = s.messages     || 0;
+  document.getElementById('s-commands').textContent    = s.commands     || 0;
 }
 
 async function loadSessions() {
@@ -283,13 +619,10 @@ async function loadSessions() {
   }
   tb.innerHTML = d.sessions.map(s => `
     <tr>
-      <td>${s.userId}</td>
-      <td>${s.phoneNumber || '—'}</td>
+      <td>${s.userId}</td><td>${s.phoneNumber || '—'}</td>
       <td><span class="badge ${s.status==='connected'?'badge-green':s.status==='reconnecting'?'badge-yellow':'badge-red'}">${s.status}</span></td>
-      <td>${s.messages}</td>
-      <td>${s.commands}</td>
-      <td><button class="btn btn-red" style="width:auto;padding:4px 12px;font-size:.75rem"
-          onclick="deleteSession('${s.userId}')">Delete</button></td>
+      <td>${s.messages}</td><td>${s.commands}</td>
+      <td><button class="btn btn-red btn-sm" onclick="deleteSession('${s.userId}')">Delete</button></td>
     </tr>`).join('');
 }
 
@@ -327,24 +660,408 @@ async function requestPair() {
   }
 }
 
+/* ══ LOGS ══ */
+let currentFilter = 'all';
 function appendLog(entry) {
   const box = document.getElementById('logBox');
   const div = document.createElement('div');
-  div.className = 'log-' + (entry.level || 'info');
+  const lvl = entry.level || 'info';
+  div.className = 'log-' + lvl + ' log-line-new';
+  div.dataset.level = lvl;
   div.textContent = `[${new Date(entry.time).toLocaleTimeString()}]  ${entry.msg}`;
+  if (currentFilter !== 'all' && lvl !== currentFilter) div.style.display = 'none';
   box.appendChild(div);
-  box.scrollTop = box.scrollHeight;
+  if (document.getElementById('autoScroll')?.checked) box.scrollTop = box.scrollHeight;
 }
-
 function clearLogs() { document.getElementById('logBox').innerHTML = ''; }
-
-// ── Auto-login if token exists ──
-if (TOKEN) {
-  document.getElementById('loginPage').style.display = 'none';
-  document.getElementById('app').style.display = 'block';
-  initApp();
+function filterLogs(level) {
+  currentFilter = level;
+  document.querySelectorAll('#logBox div').forEach(d => {
+    d.style.display = (level === 'all' || d.dataset.level === level) ? '' : 'none';
+  });
 }
+
+/* ══ THEME PANEL ══ */
+function toggleThemePanel() {
+  document.getElementById('themePanel').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const panel = document.getElementById('themePanel');
+  const btn   = document.getElementById('themeBtn');
+  if (panel.classList.contains('open') && !panel.contains(e.target) && e.target !== btn) {
+    panel.classList.remove('open');
+  }
+});
+
+function setTheme(name, el) {
+  document.documentElement.setAttribute('data-theme', name);
+  document.querySelectorAll('.theme-option').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  localStorage.setItem('riot_theme', name);
+  const nameMap = {cyber:'CYBER TEAL',blood:'BLOOD RED',matrix:'MATRIX',void:'VOID PURPLE',gold:'GOLD CIRCUIT'};
+  document.getElementById('themeNameDisp').textContent = nameMap[name] || name.toUpperCase();
+  reinitBg();
+}
+
+function setBg(type, el) {
+  document.querySelectorAll('.bg-opt').forEach(o => o.classList.remove('active'));
+  el.classList.add('active');
+  currentBg = type;
+  reinitBg();
+}
+
+function toggleEffect(name, val) {
+  if (name === 'scanlines') {
+    document.body.style.setProperty('--scanline', val ? 'rgba(var(--particle-color),.03)' : 'transparent');
+  }
+  if (name === 'glitch') {
+    document.querySelectorAll('.glitch').forEach(el => {
+      el.style.animation = val ? '' : 'none';
+    });
+  }
+}
+
+/* ══ CLOCK / STATUS BAR ══ */
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('en-GB');
+  document.getElementById('hexClock').textContent = t;
+  const d = now.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  document.getElementById('dateDisp').textContent = d;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+/* ══ SIMULATED METRICS ══ */
+let cpuHist=[], memHist=[], actHist=new Array(60).fill(0), netTx=[], netRx=[];
+function updateMetrics() {
+  const cpu = 20 + Math.random()*50;
+  const mem = 40 + Math.random()*30;
+  const queue = Math.floor(Math.random()*20);
+  const bw = Math.floor(Math.random()*80);
+  const threat = Math.min(100, (cpu + mem)/2 + Math.random()*10);
+
+  document.getElementById('cpuVal').textContent  = cpu.toFixed(0)+'%';
+  document.getElementById('cpuBar').style.width  = cpu+'%';
+  document.getElementById('memVal').textContent  = mem.toFixed(0)+'%';
+  document.getElementById('memBar').style.width  = mem+'%';
+  document.getElementById('queueVal').textContent= queue;
+  document.getElementById('queueBar').style.width= (queue/20*100)+'%';
+  document.getElementById('bwVal').textContent   = bw+' KB/s';
+  document.getElementById('bwBar').style.width   = bw+'%';
+  document.getElementById('threatPct').textContent= threat.toFixed(0)+'%';
+  document.getElementById('threatFill').style.width= threat+'%';
+
+  actHist.shift(); actHist.push(Math.random()*10 | 0);
+  drawActivityGraph();
+
+  netTx.push(Math.random()*40); if(netTx.length>40) netTx.shift();
+  netRx.push(Math.random()*30); if(netRx.length>40) netRx.shift();
+  drawNetGraph();
+
+  // Net table row
+  const events = ['MSG_RECV','CMD_EXEC','AUTH_OK','PING','WS_FRAME','SESSION_TICK'];
+  const tb = document.getElementById('netTable');
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td style="color:var(--cyan)">${events[Math.random()*events.length|0]}</td>
+    <td>${new Date().toLocaleTimeString()}</td>
+    <td>${Math.floor(Math.random()*2048)}B</td>`;
+  tb.prepend(tr);
+  while(tb.children.length > 20) tb.removeChild(tb.lastChild);
+
+  // Ping
+  const ping = 20+Math.random()*80;
+  document.getElementById('netPing').textContent = ping.toFixed(0)+'ms';
+  document.getElementById('pingBar').style.width = Math.min(ping,100)+'%';
+}
+setInterval(updateMetrics, 2000);
+updateMetrics();
+
+/* ══ ACTIVITY CANVAS ══ */
+function drawActivityGraph() {
+  const canvas = document.getElementById('activityCanvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height, max = Math.max(...actHist, 1);
+  ctx.clearRect(0,0,W,H);
+  const barW = W / actHist.length - 1;
+  const style = getComputedStyle(document.documentElement);
+  const c = style.getPropertyValue('--cyan').trim() || '#00fff7';
+  actHist.forEach((v,i) => {
+    const bH = (v/max)*H*0.85;
+    const x = i*(barW+1), y = H-bH;
+    ctx.fillStyle = c+'33';
+    ctx.fillRect(x, y, barW, bH);
+    ctx.fillStyle = c;
+    ctx.fillRect(x, y, barW, 2);
+  });
+}
+
+/* ══ NET CANVAS ══ */
+function drawNetGraph() {
+  const canvas = document.getElementById('netCanvas');
+  if (!canvas) return;
+  canvas.width = canvas.offsetWidth;
+  const ctx = canvas.getContext('2d'), W=canvas.width, H=canvas.height;
+  ctx.clearRect(0,0,W,H);
+  const style = getComputedStyle(document.documentElement);
+  const c1 = style.getPropertyValue('--cyan').trim() || '#00fff7';
+  const c2 = style.getPropertyValue('--green').trim() || '#00ff88';
+  [[netTx,c1],[netRx,c2]].forEach(([data,col]) => {
+    const max = Math.max(...data, 1);
+    ctx.beginPath();
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 1.5;
+    data.forEach((v,i) => {
+      const x = (i/(data.length-1))*W;
+      const y = H - (v/max)*(H*0.85);
+      i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+    });
+    ctx.stroke();
+    ctx.lineTo(W,H); ctx.lineTo(0,H); ctx.closePath();
+    ctx.fillStyle = col+'18';
+    ctx.fill();
+  });
+}
+
+/* ══ TERMINAL READOUT ══ */
+const termLines = [
+  '> Initializing RIOT MD core... [OK]',
+  '> Loading plugin registry... 30 plugins found',
+  '> Baileys engine v6.7.0 ready',
+  '> MessageQueue worker started',
+  '> Session store: Railway Redis',
+  '> WebSocket server listening :3000',
+  '> Pairing code engine ready',
+  '> Anti-ban delay: 800ms–2000ms',
+  '> RIOT MD is fully operational ✓',
+];
+let termIdx = 0;
+function typeTermLine() {
+  const el = document.getElementById('termReadout');
+  if (!el) return;
+  if (termIdx < termLines.length) {
+    const div = document.createElement('div');
+    div.style.color = termLines[termIdx].includes('[OK]') || termLines[termIdx].includes('✓')
+      ? 'var(--green)' : 'var(--text)';
+    div.textContent = termLines[termIdx++];
+    el.appendChild(div);
+    setTimeout(typeTermLine, 300 + Math.random()*400);
+  } else {
+    const cur = document.createElement('span');
+    cur.className = 'term-cursor';
+    el.appendChild(cur);
+  }
+}
+setTimeout(typeTermLine, 800);
+
+/* ══ BUILT-IN TERMINAL ══ */
+const termHistory = [];
+let termHistIdx = -1;
+const termCmds = {
+  help: () => ['Available commands: help, clear, status, sessions, uptime, version, theme, matrix, whoami, date, neofetch'],
+  clear: () => { document.getElementById('termOutput').innerHTML = ''; return []; },
+  date: () => [new Date().toString()],
+  whoami: () => ['root@riot-md (ALMEER Systems)'],
+  version: () => ['RIOT MD v2.0.0 | Node.js | Baileys | Railway'],
+  uptime: () => [document.getElementById('uptime').textContent || 'N/A'],
+  status: () => ['Sessions: '+document.getElementById('s-total').textContent,
+                 'Connected: '+document.getElementById('s-connected').textContent,
+                 'Messages: '+document.getElementById('s-messages').textContent],
+  matrix: () => { setBg('matrix',document.querySelector('[data-bg="matrix"]')); return ['Matrix rain activated 🟢']; },
+  neofetch: () => [
+    '        ██████╗ ██╗ ██████╗ ████████╗',
+    '        ██╔══██╗██║██╔═══██╗╚══██╔══╝',
+    '        ██████╔╝██║██║   ██║   ██║   ',
+    '        ██╔══██╗██║██║   ██║   ██║   ',
+    '        ██║  ██║██║╚██████╔╝   ██║   ',
+    '        ╚═╝  ╚═╝╚═╝ ╚═════╝    ╚═╝   ',
+    '  OS: RIOT MD Platform',
+    '  Engine: Baileys (WhatsApp Web)',
+    '  Deploy: Railway.app',
+    '  Author: ALMEER Systems / SIDER44',
+    '  Repo: github.com/SIDER44',
+  ],
+};
+
+function handleTermInput(e) {
+  const inp = document.getElementById('termInput');
+  if (e.key === 'ArrowUp') { if(termHistIdx<termHistory.length-1) inp.value=termHistory[++termHistIdx]; return; }
+  if (e.key === 'ArrowDown') { if(termHistIdx>0) inp.value=termHistory[--termHistIdx]; else {inp.value='';termHistIdx=-1;} return; }
+  if (e.key !== 'Enter') return;
+  const cmd = inp.value.trim();
+  inp.value = ''; termHistIdx = -1;
+  if (!cmd) return;
+  termHistory.unshift(cmd);
+  const out = document.getElementById('termOutput');
+  const prompt = document.createElement('div');
+  prompt.style.color = 'var(--cyan)';
+  prompt.textContent = `root@riot-md:~$ ${cmd}`;
+  out.appendChild(prompt);
+  const fn = termCmds[cmd.toLowerCase()];
+  const lines = fn ? fn() : [`bash: ${cmd}: command not found`];
+  (lines||[]).forEach(l => {
+    const d = document.createElement('div');
+    d.style.color = l.includes('not found') ? 'var(--red)' : 'var(--green)';
+    d.textContent = l;
+    out.appendChild(d);
+  });
+  out.scrollTop = out.scrollHeight;
+}
+
+/* ══════════════════════════════════════
+   LIVE BACKGROUND ENGINE
+══════════════════════════════════════ */
+let currentBg = localStorage.getItem('riot_bg') || 'matrix';
+let bgAnimId = null;
+
+function getCyanRgb() {
+  const s = getComputedStyle(document.documentElement);
+  const hex = (s.getPropertyValue('--cyan')||'#00fff7').trim().replace('#','');
+  if (hex.startsWith('rgb')) return hex;
+  const r=parseInt(hex.slice(0,2),16), g=parseInt(hex.slice(2,4),16), b=parseInt(hex.slice(4,6),16);
+  return `${r},${g},${b}`;
+}
+
+function reinitBg() {
+  if (bgAnimId) { cancelAnimationFrame(bgAnimId); bgAnimId = null; }
+  const canvas = document.getElementById('bgCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width  = window.innerWidth;
+  canvas.height = window.innerHeight;
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  if (currentBg === 'matrix')    startMatrix(canvas, ctx);
+  else if (currentBg === 'particles') startParticles(canvas, ctx);
+  else if (currentBg === 'circuit')   startCircuit(canvas, ctx);
+  else if (currentBg === 'rain')      startRain(canvas, ctx);
+  // 'none' → blank
+}
+
+/* ── MATRIX RAIN ── */
+function startMatrix(canvas, ctx) {
+  const cols = Math.floor(canvas.width / 16);
+  const drops = Array(cols).fill(1);
+  function draw() {
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    const s = getComputedStyle(document.documentElement);
+    ctx.fillStyle = (s.getPropertyValue('--matrix-color')||'#00fff7').trim();
+    ctx.font = '14px Courier New';
+    drops.forEach((y,i) => {
+      const ch = String.fromCharCode(0x30A0 + Math.random()*96);
+      ctx.fillText(ch, i*16, y*16);
+      if (y*16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i]++;
+    });
+    bgAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ── PARTICLES ── */
+function startParticles(canvas, ctx) {
+  const pts = Array.from({length:80}, () => ({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    vx:(Math.random()-.5)*.5, vy:(Math.random()-.5)*.5,
+    r:Math.random()*2+1
+  }));
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const rgb = getCyanRgb();
+    pts.forEach(p => {
+      p.x += p.vx; p.y += p.vy;
+      if (p.x<0||p.x>canvas.width) p.vx*=-1;
+      if (p.y<0||p.y>canvas.height) p.vy*=-1;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(${rgb},.7)`;
+      ctx.fill();
+    });
+    pts.forEach((a,i) => pts.slice(i+1).forEach(b => {
+      const d = Math.hypot(a.x-b.x, a.y-b.y);
+      if (d < 120) {
+        ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y);
+        ctx.strokeStyle = `rgba(${rgb},${(1-d/120)*.35})`;
+        ctx.lineWidth = .7; ctx.stroke();
+      }
+    }));
+    bgAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ── CIRCUIT BOARD ── */
+function startCircuit(canvas, ctx) {
+  const lines = [];
+  function genLine() {
+    const x=Math.random()*canvas.width, y=Math.random()*canvas.height;
+    const len=40+Math.random()*120, dir=Math.random()<.5?'h':'v';
+    lines.push({x,y,len,dir,drawn:0,speed:1+Math.random()*2,alpha:Math.random()*.5+.1});
+    if(lines.length>60) lines.shift();
+  }
+  for(let i=0;i<30;i++) genLine();
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const rgb = getCyanRgb();
+    lines.forEach(l => {
+      l.drawn = Math.min(l.drawn+l.speed, l.len);
+      ctx.beginPath(); ctx.moveTo(l.x, l.y);
+      if (l.dir==='h') ctx.lineTo(l.x+l.drawn, l.y);
+      else ctx.lineTo(l.x, l.y+l.drawn);
+      ctx.strokeStyle = `rgba(${rgb},${l.alpha})`;
+      ctx.lineWidth = 1; ctx.stroke();
+      if (l.drawn >= l.len) { Object.assign(l, {x:Math.random()*canvas.width,y:Math.random()*canvas.height,drawn:0,len:40+Math.random()*120,dir:Math.random()<.5?'h':'v'}); }
+    });
+    if (Math.random()<.05) genLine();
+    bgAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+/* ── RAIN ── */
+function startRain(canvas, ctx) {
+  const drops = Array.from({length:120}, () => ({
+    x:Math.random()*canvas.width, y:Math.random()*canvas.height,
+    len:10+Math.random()*30, speed:3+Math.random()*5, alpha:Math.random()*.4+.1
+  }));
+  function draw() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    const rgb = getCyanRgb();
+    drops.forEach(d => {
+      d.y += d.speed;
+      if (d.y > canvas.height+d.len) { d.y=-d.len; d.x=Math.random()*canvas.width; }
+      const g = ctx.createLinearGradient(d.x,d.y,d.x+d.len*.3,d.y+d.len);
+      g.addColorStop(0,`rgba(${rgb},0)`);
+      g.addColorStop(1,`rgba(${rgb},${d.alpha})`);
+      ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(d.x+d.len*.3,d.y+d.len);
+      ctx.strokeStyle=g; ctx.lineWidth=1; ctx.stroke();
+    });
+    bgAnimId = requestAnimationFrame(draw);
+  }
+  draw();
+}
+
+window.addEventListener('resize', () => { reinitBg(); drawActivityGraph(); drawNetGraph(); });
+
+/* ══ INIT ══ */
+(function boot() {
+  const saved = localStorage.getItem('riot_theme') || 'cyber';
+  document.documentElement.setAttribute('data-theme', saved);
+  const opt = document.querySelector(`[data-theme="${saved}"]`);
+  if (opt) { document.querySelectorAll('.theme-option').forEach(o=>o.classList.remove('active')); opt.classList.add('active'); }
+  const bgSaved = localStorage.getItem('riot_bg') || 'matrix';
+  currentBg = bgSaved;
+  const bgOpt = document.querySelector(`[data-bg="${bgSaved}"]`);
+  if (bgOpt) { document.querySelectorAll('.bg-opt').forEach(o=>o.classList.remove('active')); bgOpt.classList.add('active'); }
+  reinitBg();
+  if (TOKEN) {
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    initApp();
+  }
+})();
 </script>
 </body>
-  </html>
-  
+</html>
