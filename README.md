@@ -1,302 +1,325 @@
-# ⚡ RIOT MD — Multi-User WhatsApp Bot Platform
+🟢 RIOT MD — Cyberpunk WhatsApp Bot System
 
-```
-██████╗ ██╗ ██████╗ ████████╗    ███╗   ███╗██████╗
-██╔══██╗██║██╔═══██╗╚══██╔══╝    ████╗ ████║██╔══██╗
-██████╔╝██║██║   ██║   ██║       ██╔████╔██║██║  ██║
-██╔══██╗██║██║   ██║   ██║       ██║╚██╔╝██║██║  ██║
-██║  ██║██║╚██████╔╝   ██║       ██║ ╚═╝ ██║██████╔╝
-╚═╝  ╚═╝╚═╝ ╚═════╝    ╚═╝       ╚═╝     ╚═╝╚═════╝
-```
+<p align="center"><img src="https://readme-typing-svg.herokuapp.com?color=00FF9C&size=38&center=true&vCenter=true&width=1000&lines=RIOT+MD+WhatsApp+Automation+Platform;Cyberpunk+Multi+User+Bot;Advanced+Plugin+System;Powered+by+Node.js+%2B+Baileys;Developer:+Sydney+Sider"></p>---
 
-**Version:** v1.0.0 | **Developer:** Sydney Sider | **Node.js:** v20+
+<p align="center"><img src="https://media.giphy.com/media/3o7TKtnuHOHHUjR38Y/giphy.gif" width="850"></p>---
+
+<p align="center">"Visitors" (https://komarev.com/ghpvc/?username=riot160&label=VISITORS&color=00ff9c&style=for-the-badge)
+
+"Node" (https://img.shields.io/badge/Node.js-v20+-00ff9c?style=for-the-badge)
+"Bot" (https://img.shields.io/badge/Bot-RIOT%20MD-black?style=for-the-badge)
+"Platform" (https://img.shields.io/badge/Platform-WhatsApp-green?style=for-the-badge)
+"License" (https://img.shields.io/badge/license-MIT-blue?style=for-the-badge)
+
+</p>---
+
+💻 RIOT MD Terminal
+
+root@riot-md:~$ boot system
+
+██████╗ ██╗ ██████╗ ████████╗
+██╔══██╗██║██╔═══██╗╚══██╔══╝
+██████╔╝██║██║   ██║   ██║
+██╔══██╗██║██║   ██║   ██║
+██║  ██║██║╚██████╔╝   ██║
+╚═╝  ╚═╝╚═╝ ╚═════╝    ╚═╝
+
+Initializing modules...
+Loading plugins...
+Starting API server...
+Connecting WhatsApp sockets...
+
+STATUS: ONLINE
 
 ---
 
-## 📋 Features
+🧠 About RIOT MD
 
-| Feature | Status |
-|---|---|
-| Multi-user pairing code login | ✅ |
-| Dynamic plugin loader | ✅ |
-| Dark web dashboard + live logs | ✅ |
-| REST API + JWT auth | ✅ |
-| MongoDB + JSON DB fallback | ✅ |
-| Docker / Railway / Render deploy | ✅ |
-| 60+ commands across 6 categories | ✅ |
-| PM2 + auto-restart | ✅ |
+RIOT MD is a powerful multi-session WhatsApp automation bot designed for developers who want advanced automation and plugin extensibility.
+
+Built with:
+
+- Node.js
+- Baileys WhatsApp API
+- Express REST API
+- MongoDB / JSON DB
+- Cyberpunk dashboard
 
 ---
 
-## 🚀 Quick Start
+👨‍💻 Developer
 
-### Prerequisites
-- Node.js v20.18+
-- npm v10+
-- (optional) yt-dlp for download commands
+Sydney Sider
 
-### 1. Clone & Install
-```bash
+Cyber Security Enthusiast
+Automation Developer
+Bot Engineer
+
+---
+
+🔥 Features
+
+Feature| Status
+Multi User Sessions| ✅
+Pairing Code Login| ✅
+Plugin Command System| ✅
+Cyberpunk Dashboard| ✅
+REST API| ✅
+JWT Security| ✅
+Docker Support| ✅
+Railway Deploy| ✅
+Render Deploy| ✅
+Live Logs| ✅
+
+---
+
+🚀 Deploy RIOT MD
+
+Railway
+
+""Deploy on Railway" (https://railway.app/button.svg)" (https://railway.app)
+
+---
+
+Render
+
+""Deploy to Render" (https://render.com/images/deploy-to-render-button.svg)" (https://render.com)
+
+---
+
+Docker
+
+docker-compose up -d
+
+---
+
+⚙ Installation
+
+Clone Repository
+
 git clone https://github.com/your-username/riot-md.git
 cd riot-md
+
+---
+
+Install Dependencies
+
 npm install
-```
 
-### 2. Configure
-```bash
+---
+
+Configure Environment
+
 cp .env.example .env
-nano .env   # Set OWNER_NUMBER, DASHBOARD_PASS, etc.
-```
 
-### 3. Start
-```bash
+Edit ".env"
+
+BOT_NAME=RIOT MD
+OWNER_NUMBER=254700000000
+PREFIX=.
+MODE=public
+DASHBOARD_PASS=riotmd2024
+API_SECRET=supersecret
+PORT=3000
+
+---
+
+Start Bot
+
 node index.js
-```
-
-The console will show the ASCII banner and a **pairing instructions** block:
-```
-══════════════ PAIR YOUR DEVICE ══════════════
-  POST /api/login          → get JWT token
-  POST /api/pair           → generate pairing code
-  Body: { "phoneNumber": "+254XXXXXXXXX", "userId": "user1" }
-  Or use the web dashboard to pair visually.
-═══════════════════════════════════════════════
-```
 
 ---
 
-## 📱 Pairing Your WhatsApp
+📱 Pair WhatsApp
 
-### Option A — Web Dashboard (Recommended)
-1. Open `http://localhost:3000` in your browser
-2. Log in with your `DASHBOARD_PASS`
-3. Go to **Pair Device**
-4. Enter a User ID and your phone number
-5. Copy the 8-character code
-6. On your phone: **WhatsApp → Settings → Linked Devices → Link with Phone Number**
-7. Enter the code — you're connected!
+Open dashboard
 
-### Option B — API (curl)
-```bash
-# Step 1: Get token
-TOKEN=$(curl -s -X POST http://localhost:3000/api/login \
-  -H "Content-Type: application/json" \
-  -d '{"password":"riotmd2024"}' | python3 -c "import sys,json; print(json.load(sys.stdin)['token'])")
+http://localhost:3000
 
-# Step 2: Request pairing code
-curl -X POST http://localhost:3000/api/pair \
-  -H "Content-Type: application/json" \
-  -H "Authorization: Bearer $TOKEN" \
-  -d '{"phoneNumber":"+254700000000","userId":"user1"}'
-```
+Steps
+
+1 Login dashboard
+2 Open Pair Device
+3 Enter phone number
+4 Generate pairing code
+5 Link device on WhatsApp
 
 ---
 
-## 🌐 Dashboard Pages
+🧩 Plugin System
 
-| Page | URL | Description |
-|---|---|---|
-| Overview | `/` | Stats, session counts, uptime |
-| Pair Device | `/#pair` | Generate pairing codes |
-| Sessions | `/#sessions` | Manage active sessions |
-| Plugins | `/#plugins` | View all loaded commands |
-| Logs | `/#logs` | Live real-time log stream |
+Plugins automatically load from:
 
----
+plugins/<category>/
 
-## 🔌 REST API Reference
+Example plugin
 
-All protected endpoints require `Authorization: Bearer <token>`.
+export const hello = {
 
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/api/login` | Authenticate, get JWT token |
-| POST | `/api/pair` | Start session + get pairing code |
-| GET | `/api/sessions` | List all sessions |
-| DELETE | `/api/sessions/:userId` | Delete a session |
-| GET | `/api/status` | Bot status (public) |
-| POST | `/api/send` | Send a message via a session |
-| GET | `/api/plugins` | List all plugins |
-| GET | `/api/users` | List all DB users |
-| GET | `/api/logs` | Get log buffer |
+command: ["hello","hi"],
+desc: "Say hello",
+
+run: async ({ reply }) => {
+
+reply("Hello hacker 🚀")
+
+}
+
+}
 
 ---
 
-## 🧩 Plugin System
+🧠 Command Categories
 
-Plugins are auto-loaded from `plugins/<category>/`.
+Owner
 
-### Plugin Structure
-```js
-// plugins/tools/myplugin.js
-export const myCmd = {
-  command: ['hello', 'hi'],        // command name(s)
-  desc: 'Say hello',               // shown in .menu
-  owner: false,                    // owner-only?
-  group: false,                    // group-only?
-  admin: false,                    // admin-only?
-
-  run: async ({ reply, text, sock, jid, msg,
-                senderNumber, isOwner, args }) => {
-    await reply(`Hello! You said: ${text}`);
-  },
-};
-```
-
-### Context object available in `run(ctx)`:
-
-| Property | Type | Description |
-|---|---|---|
-| `sock` | Baileys socket | Raw WhatsApp socket |
-| `msg` | Object | Raw message object |
-| `jid` | string | Chat JID |
-| `sender` | string | Sender JID |
-| `senderNumber` | string | Sender phone number |
-| `isGroup` | boolean | Is this a group message? |
-| `isOwner` | boolean | Is sender the bot owner? |
-| `command` | string | Matched command |
-| `args` | string[] | Arguments after command |
-| `text` | string | Full text after command |
-| `reply(content)` | fn | Send quoted reply |
-| `react(emoji)` | fn | React to message |
+.menu
+.ping
+.reload
+.broadcast
+.block
+.unblock
+.shutdown
 
 ---
 
-## 📦 Commands Overview
+Group
 
-### Owner `.`
-`.menu` `.ping` `.info` `.setprefix` `.broadcast` `.block` `.unblock` `.reload` `.shutdown` `.ban` `.unban`
-
-### Group
-`.kick` `.promote` `.demote` `.tagall` `.groupinfo` `.antilink` `.antibadword` `.welcome` `.open` `.close` `.invite` `.warn` `.resetwarn` `.mute` `.unmute`
-
-### AI & Utilities
-`.ai` `.ask` `.chatgpt` `.image` `.translate` `.weather` `.define` `.qr`
-
-### Fun
-`.joke` `.quote` `.truth` `.dare` `.flip` `.roll` `.8ball` `.meme` `.sticker`
-
-### Tools
-`.time` `.calc` `.shortlink` `.ip` `.encode` `.decode` `.profile` `.alive` `.speed` `.tts` `.report` `.lyrics` `.crypto` `.news` `.currency` `.github` `.paste` `.color` `.random` `.remind` `.poll`
-
-### Downloads
-`.play` `.ytmp3` `.ytmp4` `.tiktok` `.instagram` `.spotify`
+.kick
+.promote
+.demote
+.tagall
+.open
+.close
+.warn
 
 ---
 
-## 🐳 Docker Deployment
+AI
 
-```bash
-docker-compose up -d
-```
-
-Volumes `./sessions` and `./database` are persisted automatically.
-
----
-
-## 🚂 Railway Deployment
-
-1. Fork this repo
-2. Connect to Railway → **Deploy from GitHub**
-3. Add environment variables from `.env.example`
-4. Railway auto-detects `railway.json` and builds the Dockerfile
-5. Open the assigned URL → your dashboard is live
+.ai
+.ask
+.chatgpt
+.weather
+.translate
+.image
 
 ---
 
-## 🎨 Render Deployment
+Fun
 
-1. New Web Service → Docker
-2. Point to your repo
-3. Set environment variables
-4. Add a **Disk** mount at `/app/sessions` (5 GB)
-5. Deploy
-
----
-
-## 🖥️ VPS with PM2
-
-```bash
-npm install -g pm2
-pm2 start ecosystem.config.cjs --env production
-pm2 save
-pm2 startup
-```
+.joke
+.truth
+.dare
+.roll
+.flip
+.meme
 
 ---
 
-## 📁 Project Structure
+Tools
 
-```
-RIOT-MD/
-├── index.js                ← Entry point + banner
-├── server.js               ← Express + Socket.io + REST API
-├── config.js               ← All configuration
-├── package.json
-├── .env.example
-├── Dockerfile
-├── docker-compose.yml
-├── railway.json
-├── render.yaml
-├── ecosystem.config.cjs    ← PM2 config
+.calc
+.qr
+.shortlink
+.crypto
+.ip
+.encode
+.decode
+.github
+
+---
+
+Downloads
+
+.play
+.ytmp3
+.ytmp4
+.tiktok
+.instagram
+.spotify
+
+---
+
+🌐 Dashboard Pages
+
+Page| Route
+Overview| "/"
+Pair Device| "/#pair"
+Sessions| "/#sessions"
+Plugins| "/#plugins"
+Logs| "/#logs"
+
+---
+
+📂 Project Structure
+
+RIOT-MD
 │
-├── lib/
-│   ├── session.js          ← Baileys session manager
-│   ├── handler.js          ← Message router
-│   ├── commands.js         ← Plugin loader & cooldowns
-│   └── database.js         ← JSON/MongoDB store
+├ index.js
+├ server.js
+├ config.js
+├ package.json
 │
-├── plugins/
-│   ├── owner/              ← Bot admin commands
-│   ├── group/              ← Group management
-│   ├── ai/                 ← AI, weather, translate
-│   ├── fun/                ← Games, jokes, memes
-│   ├── tools/              ← Utilities
-│   └── download/           ← Media downloaders
+├ lib
+│ ├ session.js
+│ ├ handler.js
+│ ├ commands.js
+│ └ database.js
 │
-├── dashboard/
-│   └── public/
-│       └── index.html      ← Dark hacker dashboard UI
+├ plugins
+│ ├ owner
+│ ├ group
+│ ├ ai
+│ ├ fun
+│ ├ tools
+│ └ download
 │
-├── sessions/               ← Per-user Baileys auth (gitignored)
-└── database/               ← JSON flat-file DB (gitignored)
-```
+├ dashboard
+│ └ public
+│    └ index.html
+│
+├ sessions
+└ database
 
 ---
 
-## ⚙️ Environment Variables
+📊 GitHub Stats
 
-| Variable | Default | Description |
-|---|---|---|
-| `BOT_NAME` | RIOT MD | Bot display name |
-| `OWNER_NUMBER` | 254700000000 | Owner phone (no +) |
-| `PREFIX` | `.` | Command prefix |
-| `MODE` | `public` | `public` or `private` |
-| `DASHBOARD_PASS` | riotmd2024 | Dashboard login password |
-| `API_SECRET` | _(change this)_ | JWT signing secret |
-| `PORT` | 3000 | Web server port |
-| `MONGO_URI` | _(blank)_ | MongoDB URI (optional) |
-| `AUTO_READ` | true | Auto-read messages |
-| `AUTO_TYPING` | true | Show typing indicator |
-| `CMD_COOLDOWN` | 3000 | Cooldown between commands (ms) |
+<p align="center"><img src="https://github-readme-stats.vercel.app/api?username=riot160&show_icons=true&theme=radical"><img src="https://github-readme-streak-stats.herokuapp.com/?user=riot160&theme=radical"></p>---
 
----
+🛡 Security
 
-## 🛡️ Security Notes
+Before deploying change
 
-- Change `DASHBOARD_PASS` and `API_SECRET` before deploying
-- Keep your `.env` file out of version control (`.gitignore` handles this)
-- The `sessions/` folder contains your WhatsApp auth — back it up
-- Rate limiting is active on all `/api/` routes (200 req / 15 min)
+DASHBOARD_PASS
+API_SECRET
+OWNER_NUMBER
+
+Never expose
+
+.env
+sessions/
+database/
 
 ---
 
-## 👨‍💻 Developer
+⚡ System Status
 
-**Sydney Sider** — RIOT MD v1.0.0
+SYSTEM STATUS : ONLINE
+MULTI SESSION : ACTIVE
+API SECURITY  : ENABLED
+DASHBOARD     : RUNNING
+NODE ENGINE   : ACTIVE
 
 ---
 
-## 📄 License
+📜 License
 
-MIT — free to use, modify, and distribute.
+MIT License
+
+---
+
+⚡ RIOT MD
+
+Cyberpunk WhatsApp Automation Platform
