@@ -2,8 +2,8 @@
 import { config } from '../../config.js';
 
 export default {
-  command: ['repo', 'source', 'github'],
-  desc: 'Show the bot repository and source info',
+  command: ['repo', 'source', 'code'],
+  desc: 'Show the bot GitHub repository link',
   category: 'owner',
   run: async ({ reply }) => {
     await reply(
@@ -13,12 +13,11 @@ export default {
       `┃ 👤 Dev     : ${config.DEVELOPER}\n` +
       `┃ 📦 Version : ${config.BOT_VERSION}\n` +
       `┃ 🟢 Node    : ${process.version}\n` +
-      `┃ 🔧 Library : @whiskeysockets/baileys\n` +
       `┃\n` +
-      `┃ 📂 *Source Code*\n` +
-      `┃ https://github.com/Dark-Xploit/CypherX\n` +
+      `┃ 📂 *GitHub Repo*\n` +
+      `┃ https://github.com/riot160/RIOT2\n` +
       `┃\n` +
-      `┃ ⭐ Star the repo if you enjoy the bot!\n` +
+      `┃ ⭐ Star the repo if you enjoy RIOT MD!\n` +
       `┗▣`
     );
   },
